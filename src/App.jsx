@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { PrimeReactProvider } from "primereact/api";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
@@ -7,10 +7,12 @@ import { Row } from "primereact/row";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { InputNumber } from "primereact/inputnumber";
-import { InputTextarea } from "primereact/inputtextarea";
 import "primereact/resources/themes/lara-light-purple/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
+
+import SideNavBar from "./SideNavBar";
+import "./App.css";
 
 function App() {
   const value = {
@@ -68,6 +70,32 @@ function App() {
     overall: 0,
   });
 
+  useEffect(() => {
+    const savedData = localStorage.getItem("timesheetData");
+    if (savedData) {
+      setRows(JSON.parse(savedData));
+    }
+
+    const newTotal = rows.reduce(
+      (acc, row) => {
+        Object.keys(row.hours).forEach((day) => {
+          acc[day] = (acc[day] || 0) + (row.hours[day] || 0);
+        });
+        return acc;
+      },
+      { overall: 0 }
+    );
+    newTotal.overall =
+      Object.values(newTotal).reduce((a, b) => a + b, 0) - newTotal.overall;
+    setTotal(newTotal);
+  }, [rows]);
+
+  const onEditorValueChange = (props, value) => {
+    const newRows = [...rows];
+    newRows[props.rowIndex][props.field] = value;
+    setRows(newRows);
+  };
+
   const addRow = () => {
     setRows([
       ...rows,
@@ -89,8 +117,8 @@ function App() {
     }
   };
 
-  const save = () => {
-    localStorage.setItem("timesheet", JSON.stringify(rows));
+  const saveData = () => {
+    localStorage.setItem("timesheetData", JSON.stringify(rows));
   };
 
   const exportCSV = () => {
@@ -201,103 +229,289 @@ function App() {
 
   return (
     <PrimeReactProvider value={value}>
-      <div className="p-datatable-wrapper">
-        <h1
-          className="table-name"
-          style={{
-            textAlign: "center",
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          Timesheet
-        </h1>
-        <div className="p-datatable">
-          <DataTable
-            showGridlines
-            value={rows}
-            ref={dt}
-            headerColumnGroup={headerGroup}
-            footerColumnGroup={footerGroup}
-            dataKey="projectName"
-            editMode="cell"
-            tableStyle={{ minWidth: "50rem" }}
-          >
-            <Column
-              field="projectType"
-              editor={(props) => <InputText {...props} />}
-            />
-            <Column
-              field="projectName"
-              editor={(props) => <InputText {...props} />}
-            />
-            <Column
-             field="task"
-             editor={(props) => <InputText {...props} />} 
-            />
-            <Column
-              field="comment"
-              editor={(props) => <InputTextarea {...props} />}
-            />
-            <Column
-              field="hours.mon"
-              editor={(props) => <InputNumber {...props} />}
-            />
-            <Column
-              field="hours.tue"
-              editor={(props) => <InputNumber {...props} />}
-            />
-            <Column
-              field="hours.wed"
-              editor={(props) => <InputNumber {...props} />}
-            />
-            <Column
-              field="hours.thu"
-              editor={(props) => <InputNumber {...props} />}
-            />
-            <Column
-              field="hours.fri"
-              editor={(props) => <InputNumber {...props} />}
-            />
-            <Column
-              field="hours.sat"
-              editor={(props) => <InputNumber {...props} />}
-            />
-            <Column
-              field="hours.sun"
-              editor={(props) => <InputNumber {...props} />}
-            />
-            <Column
-              field="total"
-              editor={(props) => <InputNumber {...props} />}
-            />
-            <Column
-              body={(rowData, column) => <Button label="+" onClick={addRow} />}
-            />
-            <Column
-              body={(rowData, column) =>
-                rows.length > 1 ? (
-                  <Button
-                    label="-"
-                    onClick={() => removeRow(rows.indexOf(rowData))}
-                  />
-                ) : null
-              }
-            />
-          </DataTable>
-          <Button
-            label="Save"
-            icon="pi pi-save"
-            className="p-button-help"
-            onClick={save}
-          />
-          <Button
-            label="Export"
-            icon="pi pi-upload"
-            className="p-button-help"
-            onClick={exportCSV}
-          />
+      <div className="wrapper">
+        <div className="container">
+          <div id="sidebar">
+            <SideNavBar />
+          </div>
+          <div className="p-datatable-wrapper">
+            <h1
+              className="table-name"
+              style={{
+                textAlign: "center",
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              Timesheet
+            </h1>
+            <div className="p-datatable">
+              <DataTable
+                showGridlines
+                value={rows}
+                ref={dt}
+                headerColumnGroup={headerGroup}
+                footerColumnGroup={footerGroup}
+                dataKey="projectName"
+                editMode="cell"
+                onEdit={(e) => onEditorValueChange(e, e.value)}
+                tableStyle={{ minWidth: "50rem" }}
+              >
+                <Column
+                  field="projectType"
+                  editor={(props) => (
+                    <InputText
+                      {...props}
+                      onChange={(e) =>
+                        onEditorValueChange(props, e.target.value)
+                      }
+                    />
+                  )}
+                />
+                <Column
+                  field="projectName"
+                  editor={(props) => (
+                    <InputText
+                      {...props}
+                      onChange={(e) =>
+                        onEditorValueChange(props, e.target.value)
+                      }
+                    />
+                  )}
+                />
+                <Column
+                  field="task"
+                  editor={(props) => (
+                    <InputText
+                      {...props}
+                      onChange={(e) =>
+                        onEditorValueChange(props, e.target.value)
+                      }
+                    />
+                  )}
+                />
+                <Column
+                  field="comment"
+                  editor={(props) => (
+                    <InputText
+                      {...props}
+                      onChange={(e) =>
+                        onEditorValueChange(props, e.target.value)
+                      }
+                    />
+                  )}
+                />
+                <Column
+                  field="hours.mon"
+                  editor={(props) => (
+                    <InputNumber
+                      {...props}
+                      onChange={(e) => {
+                        const newRows = [...rows];
+                        newRows[props.rowIndex].hours.mon = e.value || 0;
+                        newRows[props.rowIndex].total = Object.values(
+                          newRows[props.rowIndex].hours
+                        ).reduce((a, b) => a + b, 0);
+                        setRows(newRows);
+                        const newTotal = { ...total };
+                        newTotal.mon = newRows.reduce(
+                          (sum, row) => sum + (row.hours.mon || 0),
+                          0
+                        );
+                        newTotal.overall =
+                          Object.values(newTotal).reduce((a, b) => a + b, 0) -
+                          newTotal.overall;
+                        setTotal(newTotal);
+                      }}
+                    />
+                  )}
+                />
+                <Column
+                  field="hours.tue"
+                  editor={(props) => (
+                    <InputNumber
+                      {...props}
+                      onChange={(e) => {
+                        const newRows = [...rows];
+                        newRows[props.rowIndex].hours.tue = e.value || 0;
+                        newRows[props.rowIndex].total = Object.values(
+                          newRows[props.rowIndex].hours
+                        ).reduce((a, b) => a + b, 0);
+                        setRows(newRows);
+                        const newTotal = { ...total };
+                        newTotal.tue = newRows.reduce(
+                          (sum, row) => sum + (row.hours.tue || 0),
+                          0
+                        );
+                        newTotal.overall =
+                          Object.values(newTotal).reduce((a, b) => a + b, 0) -
+                          newTotal.overall;
+                        setTotal(newTotal);
+                      }}
+                    />
+                  )}
+                />
+                <Column
+                  field="hours.wed"
+                  editor={(props) => (
+                    <InputNumber
+                      {...props}
+                      onChange={(e) => {
+                        const newRows = [...rows];
+                        newRows[props.rowIndex].hours.wed = e.value || 0;
+                        newRows[props.rowIndex].total = Object.values(
+                          newRows[props.rowIndex].hours
+                        ).reduce((a, b) => a + b, 0);
+                        setRows(newRows);
+                        const newTotal = { ...total };
+                        newTotal.wed = newRows.reduce(
+                          (sum, row) => sum + (row.hours.wed || 0),
+                          0
+                        );
+                        newTotal.overall =
+                          Object.values(newTotal).reduce((a, b) => a + b, 0) -
+                          newTotal.overall;
+                        setTotal(newTotal);
+                      }}
+                    />
+                  )}
+                />
+                <Column
+                  field="hours.thu"
+                  editor={(props) => (
+                    <InputNumber
+                      {...props}
+                      onChange={(e) => {
+                        const newRows = [...rows];
+                        newRows[props.rowIndex].hours.thu = e.value || 0;
+                        newRows[props.rowIndex].total = Object.values(
+                          newRows[props.rowIndex].hours
+                        ).reduce((a, b) => a + b, 0);
+                        setRows(newRows);
+                        const newTotal = { ...total };
+                        newTotal.thu = newRows.reduce(
+                          (sum, row) => sum + (row.hours.thu || 0),
+                          0
+                        );
+                        newTotal.overall =
+                          Object.values(newTotal).reduce((a, b) => a + b, 0) -
+                          newTotal.overall;
+                        setTotal(newTotal);
+                      }}
+                    />
+                  )}
+                />
+                <Column
+                  field="hours.fri"
+                  editor={(props) => (
+                    <InputNumber
+                      {...props}
+                      onChange={(e) => {
+                        const newRows = [...rows];
+                        newRows[props.rowIndex].hours.fri = e.value || 0;
+                        newRows[props.rowIndex].total = Object.values(
+                          newRows[props.rowIndex].hours
+                        ).reduce((a, b) => a + b, 0);
+                        setRows(newRows);
+                        const newTotal = { ...total };
+                        newTotal.fri = newRows.reduce(
+                          (sum, row) => sum + (row.hours.fri || 0),
+                          0
+                        );
+                        newTotal.overall =
+                          Object.values(newTotal).reduce((a, b) => a + b, 0) -
+                          newTotal.overall;
+                        setTotal(newTotal);
+                      }}
+                    />
+                  )}
+                />
+                <Column
+                  field="hours.sat"
+                  editor={(props) => (
+                    <InputNumber
+                      {...props}
+                      onChange={(e) => {
+                        const newRows = [...rows];
+                        newRows[props.rowIndex].hours.sat = e.value || 0;
+                        newRows[props.rowIndex].total = Object.values(
+                          newRows[props.rowIndex].hours
+                        ).reduce((a, b) => a + b, 0);
+                        setRows(newRows);
+                        const newTotal = { ...total };
+                        newTotal.sat = newRows.reduce(
+                          (sum, row) => sum + (row.hours.sat || 0),
+                          0
+                        );
+                        newTotal.overall =
+                          Object.values(newTotal).reduce((a, b) => a + b, 0) -
+                          newTotal.overall;
+                        setTotal(newTotal);
+                      }}
+                    />
+                  )}
+                />
+                <Column
+                  field="hours.sun"
+                  editor={(props) => (
+                    <InputNumber
+                      {...props}
+                      onChange={(e) => {
+                        const newRows = [...rows];
+                        newRows[props.rowIndex].hours.sun = e.value || 0;
+                        newRows[props.rowIndex].total = Object.values(
+                          newRows[props.rowIndex].hours
+                        ).reduce((a, b) => a + b, 0);
+                        setRows(newRows);
+                        const newTotal = { ...total };
+                        newTotal.sun = newRows.reduce(
+                          (sum, row) => sum + (row.hours.sun || 0),
+                          0
+                        );
+                        newTotal.overall =
+                          Object.values(newTotal).reduce((a, b) => a + b, 0) -
+                          newTotal.overall;
+                        setTotal(newTotal);
+                      }}
+                    />
+                  )}
+                />
+                <Column
+                  field="total"
+                  style={{ fontWeight: "bold" }}
+                  editor={false}
+                />
+                <Column
+                  body={(rowData, column) => (
+                    <Button label="+" onClick={addRow} />
+                  )}
+                />
+                <Column
+                  body={(rowData, column) =>
+                    rows.length > 1 ? (
+                      <Button
+                        label="-"
+                        onClick={() => removeRow(rows.indexOf(rowData))}
+                      />
+                    ) : null
+                  }
+                />
+              </DataTable>
+              <Button
+                label="Save"
+                icon="pi pi-save"
+                className="p-button-help"
+                onClick={saveData}
+              />
+              <Button
+                label="Export"
+                icon="pi pi-upload"
+                className="p-button-help"
+                onClick={exportCSV}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </PrimeReactProvider>

@@ -1,3 +1,9 @@
+:root {
+  --primary-color: #19105b;
+  --background-color: #ffffff;
+  --accent-color: #fe6095;
+}
+
 .App {
   text-align: center;
 }
@@ -35,4 +41,31 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+#sidebar {
+  display: inline-block;
+}
+
+.p-datatable-wrapper {
+  display: inline-block;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--primary-color);
+}
+
+th {
+  background-color: var(--primary-color);
+  color: var(--background-color);
+}
+
+button {
+  background-color: var(--accent-color);
 }
