@@ -26,7 +26,7 @@ const SideNavBar = () => {
         paddingTop: "10px",
         background: "linear-gradient(to bottom, #19105b, #fe6095 )",
         color: "#ffffff",
-        width: "200px",
+        width: "250px",
         height: "100vh",
       }}
     >

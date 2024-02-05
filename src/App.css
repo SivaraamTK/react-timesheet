@@ -53,12 +53,32 @@
 }
 
 #datepicker{
-  display: inline-block;
+  float: inline-end;
+  display: inline-flex;
+  justify-content: space-between;
+}
+
+.date-range{
+  color: #4b5563;
+  padding: 5px;
+  font-weight: 600;
+}
+
+.d-flex{
+  justify-content: space-between;
+  align-content: center;
+  align-items: center;
+  display: flex;
+}
+
+.header-section{
+  padding: 0;
 }
 
 .p-datatable-wrapper {
   display: inline-block;
   margin: 0 auto;
+  padding: 15px ;
 }
 
 body {
@@ -69,6 +89,7 @@ body {
 h1 {
   background-color: var(--primary-color);
   color: var(--background-color);
+  margin-bottom: 0;
 }
 
 th {

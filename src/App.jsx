@@ -279,38 +279,38 @@ function App() {
             <SideNavBar />
           </div>
           <div className="p-datatable-wrapper">
-            <h1
-              className="table-name"
-              style={{
-                textAlign: "center",
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              Timesheet
-            </h1>
-
-            <div id="datepicker">
-              <div className="d-flex">
-                <button
-                  type="button"
-                  className="p-button p-component p-button-icon-only"
-                  onClick={prevWeek}
-                >
-                  <span className="p-button-icon p-c pi pi-angle-left"></span>
-                  <span className="p-button-label p-c">&nbsp;</span>
-                </button>
-                <div className="date-range">{`${week.mon} to ${week.sun}`}</div>
-                <button
-                  type="button"
-                  className="p-button p-component p-button-icon-only"
-                  onClick={nextWeek}
-                >
-                  <span className="p-button-icon p-c pi pi-angle-right"></span>
-                  <span className="p-button-label p-c">&nbsp;</span>
-                </button>
+            <div className="header-section">
+              <div id="datepicker">
+                <div class="d-flex">
+                  <button
+                    type="button"
+                    onClick={prevWeek}
+                    class="p-button p-component p-button-icon-only"
+                  >
+                    <span class="p-button-icon p-c pi pi-angle-left"></span>
+                    <span class="p-button-label p-c">&nbsp;</span>
+                  </button>
+                  <div class="date-range">{`${week.mon} to ${week.sun}`}</div>
+                  <button
+                    type="button"
+                    onClick={prevWeek}
+                    class="p-button p-component p-button-icon-only"
+                  >
+                    <span class="p-button-icon p-c pi pi-angle-right"></span>
+                    <span class="p-button-label p-c">&nbsp;</span>
+                  </button>
+                </div>
               </div>
+              <br />
+              <h1
+                className="table-name"
+                style={{
+                  textAlign: "left",
+                  paddingLeft: "1rem",
+                }}
+              >
+                Timesheet
+              </h1>
             </div>
 
             <div className="p-datatable card p-fluid">
