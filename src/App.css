@@ -52,8 +52,13 @@
   display: inline-block;
 }
 
+#datepicker{
+  display: inline-block;
+}
+
 .p-datatable-wrapper {
   display: inline-block;
+  margin: 0 auto;
 }
 
 body {
@@ -61,11 +66,47 @@ body {
   color: var(--primary-color);
 }
 
-th {
+h1 {
   background-color: var(--primary-color);
   color: var(--background-color);
 }
 
+th {
+  color: var(--primary-color);
+  font-weight:bold;
+}
+
+.p-button-group{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 button {
+  background-color: var(--primary-color);
+  border: var(--primary-color);
+  border-radius: 10%;
+  float: right;
+}
+button:hover {
   background-color: var(--accent-color);
+}
+
+#root>div>div>div.p-datatable-wrapper>div>div>div>table>thead>tr:nth-child(1)>th:nth-child(5)>div{
+  justify-content: center;
+}
+
+.red-row td {
+  color: red;
+}
+
+.p-column-header-content{
+  display: flex;
+  justify-content: center;
+}
+
+#datepicker {
+  float: inline-end;
+  display: inline-flex;
+  justify-content: center;
 }
