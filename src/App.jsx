@@ -227,6 +227,7 @@ function App() {
         <Column header="Project Name" rowSpan={3} />
         <Column header="Task" rowSpan={3} />
         <Column header="Comment" rowSpan={3} />
+        <Column header="" colSpan={7} />
         <Column header="Total" rowSpan={3} />
       </Row>
       <Row>
@@ -293,7 +294,7 @@ function App() {
                   <div class="date-range">{`${week.mon} to ${week.sun}`}</div>
                   <button
                     type="button"
-                    onClick={prevWeek}
+                    onClick={nextWeek}
                     class="p-button p-component p-button-icon-only"
                   >
                     <span class="p-button-icon p-c pi pi-angle-right"></span>
