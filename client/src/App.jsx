@@ -36,10 +36,10 @@ const projectNameOptions = [
   { label: "Post-Sales", value: "Sales_002" },
 ];
 const taskOptions = [
-  { label: "Build & Run Training", value: "BART" },
-  { label: "Complete Training", value: "CT" },
-  { label: "People Management", value: "PM" },
-  { label: "Pre-Sales Activity", value: "PSA" },
+  { label: "Build & Run Training", value: "Build & Run" },
+  { label: "Complete Training", value: "Complete Training" },
+  { label: "People Management", value: "People Mgmt." },
+  { label: "Pre-Sales Activity", value: "Pre-Sales Act" },
 ];
 
 function App() {
@@ -111,34 +111,48 @@ function App() {
       `timesheetData-${formatDate(weekStart)}`
     );
     if (savedData) {
-      const loadedRows = JSON.parse(savedData);
+      let loadedRows = JSON.parse(savedData);
+      if (!Array.isArray(loadedRows)) {
+        loadedRows = [loadedRows];
+      }
       setRows(loadedRows);
       console.log("Loaded data from local storage");
     } else {
-      fetchTimesheetData(formatDate(weekStart));
+      (async () => {
+        await fetchTimesheetData(formatDate(weekStart));
+      })();
     }
   }, [weekStart]);
 
-  // Calculate total whenever rows changes
   useEffect(() => {
-    const newTotal = rows.reduce(
-      (acc, row) => {
+    if (!Array.isArray(rows)) {
+      console.error("rows is not an array");
+      return;
+    }
+    const newTotal = rows.reduce((acc, row) => {
+      if (row && typeof row === "object" && row.hours) {
         Object.keys(row.hours).forEach((day) => {
           acc[day] = (acc[day] || 0) + (row.hours[day] || 0);
         });
-        return acc;
-      },
-      { overall: 0 }
-    );
+      }
+      return acc;
+    }, {});
     newTotal.overall =
-      Object.values(newTotal).reduce((a, b) => a + b, 0) - newTotal.overall;
+      Object.values(newTotal).reduce((a, b) => {
+        const numA = Number(a) || 0;
+        const numB = Number(b) || 0;
+        return numA + numB;
+      }, 0) - (Number(newTotal.overall) || 0);
     setTotal(newTotal);
     console.log("Updated totals");
   }, [rows]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      localStorage.setItem(`timesheetData-${weekStart}`, JSON.stringify(rows));
+      localStorage.setItem(
+        `timesheetData-${formatDate(weekStart)}`,
+        JSON.stringify(rows)
+      );
       console.log("Saved data to local storage");
     }, 1000);
     return () => clearTimeout(timeoutId);
@@ -156,14 +170,6 @@ function App() {
     }, {});
     setWeek(newWeek);
   }, [weekStart]);
-
-  const saveTimesheetData = async () => {
-    try {
-      await axios.post(`http://localhost:8080/timesheets/${weekStart}`, rows);
-    } catch (error) {
-      console.error("Failed to save timesheet data:", error);
-    }
-  };
 
   const onCellEditComplete = (e) => {
     let { rowData, newValue, field, originalEvent: event } = e;
@@ -193,10 +199,11 @@ function App() {
         {...props}
         mode="decimal"
         min={0}
-        className={props.value > 6 ? "p-invalid" : ""}
-        style={props.value > 6 ? { color: "red" } : {}}
+        className={props.value > 8 ? "p-invalid" : ""}
+        style={props.value > 8 ? { color: "red" } : {}}
         onChange={(e) => {
           const newRows = [...rows];
+          newRows[props.rowIndex].hours = newRows[props.rowIndex].hours || {};
           newRows[props.rowIndex].hours[day] = e.value || 0;
           newRows[props.rowIndex].total = Object.values(
             newRows[props.rowIndex].hours
@@ -204,7 +211,7 @@ function App() {
           setRows(newRows);
           const newTotal = { ...total };
           newTotal[day] = newRows.reduce(
-            (sum, row) => sum + (row.hours[day] || 0),
+            (sum, row) => sum + ((row.hours && row.hours[day]) || 0),
             0
           );
           newTotal.overall =
@@ -216,31 +223,41 @@ function App() {
     );
   };
 
-  const dropdownEditor = (options, fieldOptions) => {
-    if (!Array.isArray(options.data)) {
-      console.error("options.data is not an array");
-      return;
-    }
+  const DropdownEditor = ({ options, fieldOptions, rows, setRows }) => {
+    const [dropdownValue, setDropdownValue] = useState(
+      options.rowData[options.field]
+    );
+
     return (
       <Dropdown
-        value={options.rowData[options.field]}
+        editable
+        filter
+        showClear
+        value={dropdownValue}
         options={fieldOptions}
         onChange={(e) => {
-          let editedRows = [...options.data];
-          editedRows[options.rowIndex][options.field] = e.value;
+          setDropdownValue(e.value);
+          let editedRows = [...rows];
+          let newRow = { ...editedRows[options.rowIndex] };
+          newRow[options.field] = e.value;
+          editedRows[options.rowIndex] = newRow;
           setRows(editedRows);
         }}
         placeholder="Select a value"
+        className="w-full md:w-14rem"
         style={{ width: "100%" }}
-        appendTo={document.body}
       />
     );
   };
 
   const dynamicRowClassName = (rowData) => {
-    return {
-      "red-row": Object.values(rowData.hours).some((hour) => hour > 6),
-    };
+    if (rowData.hours) {
+      return {
+        "red-row": Object.values(rowData.hours).some((hour) => hour >= 8),
+      };
+    } else {
+      return {};
+    }
   };
 
   const addRow = () => {
@@ -282,6 +299,17 @@ function App() {
       JSON.stringify(rows)
     );
     saveTimesheetData();
+  };
+
+  const saveTimesheetData = async () => {
+    try {
+      await axios.post(
+        `http://localhost:8080/timesheets/${formatDate(weekStart)}`,
+        rows
+      );
+    } catch (error) {
+      console.error("Failed to save timesheet data:", error);
+    }
   };
 
   const exportCSV = () => {
@@ -349,23 +377,23 @@ function App() {
         <div className="p-datatable-wrapper">
           <div className="header-section">
             <div id="datepicker">
-              <div class="d-flex">
+              <div className="d-flex">
                 <button
                   type="button"
                   onClick={prevWeek}
-                  class="p-button p-component p-button-icon-only"
+                  className="p-button p-component p-button-icon-only"
                 >
-                  <span class="p-button-icon p-c pi pi-angle-left"></span>
-                  <span class="p-button-label p-c">&nbsp;</span>
+                  <span className="p-button-icon p-c pi pi-angle-left"></span>
+                  <span className="p-button-label p-c">&nbsp;</span>
                 </button>
-                <div class="date-range">{`${week.mon} to ${week.sun}`}</div>
+                <div className="date-range">{`${week.mon} to ${week.sun}`}</div>
                 <button
                   type="button"
                   onClick={nextWeek}
-                  class="p-button p-component p-button-icon-only"
+                  className="p-button p-component p-button-icon-only"
                 >
-                  <span class="p-button-icon p-c pi pi-angle-right"></span>
-                  <span class="p-button-label p-c">&nbsp;</span>
+                  <span className="p-button-icon p-c pi pi-angle-right"></span>
+                  <span className="p-button-label p-c">&nbsp;</span>
                 </button>
               </div>
             </div>
@@ -383,105 +411,123 @@ function App() {
           </div>
 
           <div className="p-datatable card p-fluid">
-            <DataTable
-              value={rows}
-              ref={dt}
-              headerColumnGroup={headerGroup}
-              footerColumnGroup={footerGroup}
-              rowClassName={dynamicRowClassName}
-              editMode="cell"
-              size="small"
-              tableStyle={{
-                minWidth: "50rem",
-              }}
-            >
-              <Column
-                field="projectType"
-                key="projectType"
-                editor={(options) =>
-                  dropdownEditor(options, projectTypeOptions)
-                }
-                onCellEditComplete={onCellEditComplete}
-              />
-              <Column
-                field="projectName"
-                key="projectName"
-                editor={(options) =>
-                  dropdownEditor(options, projectNameOptions)
-                }
-                onCellEditComplete={onCellEditComplete}
-              />
-              <Column
-                field="task"
-                key="task"
-                editor={(options) => dropdownEditor(options, taskOptions)}
-                onCellEditComplete={onCellEditComplete}
-              />
-              <Column
-                field="comment"
-                key="comment"
-                editor={(options) => textEditor(options)}
-                onCellEditComplete={onCellEditComplete}
-              />
-              <Column
-                field="hours.mon"
-                key="hours.mon"
-                editor={numberEditor("mon")}
-              />
-              <Column
-                field="hours.tue"
-                key="hours.tue"
-                editor={numberEditor("tue")}
-              />
-              <Column
-                field="hours.wed"
-                key="hours.wed"
-                editor={numberEditor("wed")}
-              />
-              <Column
-                field="hours.thu"
-                key="hours.thu"
-                editor={numberEditor("thu")}
-              />
-              <Column
-                field="hours.fri"
-                key="hours.fri"
-                editor={numberEditor("fri")}
-              />
-              <Column
-                field="hours.sat"
-                key="hours.sat"
-                editor={numberEditor("sat")}
-              />
-              <Column
-                field="hours.sun"
-                key="hours.sun"
-                editor={numberEditor("sun")}
-              />
-              <Column
-                field="total"
-                key="total"
-                style={{ fontWeight: "bold" }}
-                editor={false}
-              />
-              <Column
-                body={(rowData, column) => (
-                  <Button label="+" onClick={addRow} />
-                )}
-                style={{ border: "0px solid white" }}
-              />
-              <Column
-                style={{ border: "0px solid white" }}
-                body={(rowData, column) =>
-                  rows.indexOf(rowData) !== 0 ? (
-                    <Button
-                      label="-"
-                      onClick={() => removeRow(rows.indexOf(rowData))}
+            {Array.isArray(rows) ? (
+              <DataTable
+                value={rows}
+                ref={dt}
+                headerColumnGroup={headerGroup}
+                footerColumnGroup={footerGroup}
+                rowClassName={dynamicRowClassName}
+                editMode="cell"
+                size="small"
+                tableStyle={{
+                  minWidth: "50rem",
+                }}
+              >
+                <Column
+                  field="projectType"
+                  key="projectType"
+                  editor={(props) => (
+                    <DropdownEditor
+                      options={props}
+                      fieldOptions={projectTypeOptions}
+                      rows={rows}
+                      setRows={setRows}
                     />
-                  ) : null
-                }
-              />
-            </DataTable>
+                  )}
+                />
+                <Column
+                  field="projectName"
+                  key="projectName"
+                  editor={(props) => (
+                    <DropdownEditor
+                      options={props}
+                      fieldOptions={projectNameOptions}
+                      rows={rows}
+                      setRows={setRows}
+                    />
+                  )}
+                />
+                <Column
+                  field="task"
+                  key="task"
+                  editor={(props) => (
+                    <DropdownEditor
+                      options={props}
+                      fieldOptions={taskOptions}
+                      rows={rows}
+                      setRows={setRows}
+                    />
+                  )}
+                />
+                <Column
+                  field="comment"
+                  key="comment"
+                  editor={(options) => textEditor(options)}
+                  onCellEditComplete={onCellEditComplete}
+                />
+                <Column
+                  field="hours.mon"
+                  key="hours.mon"
+                  editor={numberEditor("mon")}
+                />
+                <Column
+                  field="hours.tue"
+                  key="hours.tue"
+                  editor={numberEditor("tue")}
+                />
+                <Column
+                  field="hours.wed"
+                  key="hours.wed"
+                  editor={numberEditor("wed")}
+                />
+                <Column
+                  field="hours.thu"
+                  key="hours.thu"
+                  editor={numberEditor("thu")}
+                />
+                <Column
+                  field="hours.fri"
+                  key="hours.fri"
+                  editor={numberEditor("fri")}
+                />
+                <Column
+                  field="hours.sat"
+                  key="hours.sat"
+                  editor={numberEditor("sat")}
+                />
+                <Column
+                  field="hours.sun"
+                  key="hours.sun"
+                  editor={numberEditor("sun")}
+                />
+                <Column
+                  field="total"
+                  key="total"
+                  style={{ fontWeight: "bold" }}
+                  editor={false}
+                />
+                <Column
+                  body={(rowData, column) => (
+                    <Button label="+" onClick={addRow} />
+                  )}
+                  style={{ border: "0px solid white" }}
+                />
+                <Column
+                  style={{ border: "0px solid white" }}
+                  body={(rowData, column) =>
+                    rows.indexOf(rowData) !== 0 ? (
+                      <Button
+                        label="-"
+                        onClick={() => removeRow(rows.indexOf(rowData))}
+                      />
+                    ) : null
+                  }
+                />
+              </DataTable>
+            ) : (
+              <div className="loading">Loading...</div>
+            )}
           </div>
           <div className="p-button-group">
             <Button

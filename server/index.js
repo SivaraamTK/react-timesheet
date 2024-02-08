@@ -1,24 +1,35 @@
 const express = require("express");
-const fs = require("fs");
+const cors = require("cors");
+const fs = require("fs").promises;
+const path = require("path");
 const app = express();
 const port = 8080;
 
+app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 let timesheets = {};
 
+const dataFilePath = path.join(__dirname, "data.json");
+
 // Load timesheets from data.json
-if (fs.existsSync("data.json")) {
-  const rawData = fs.readFileSync("data.json");
-  timesheets = JSON.parse(rawData);
-  console.log("Timesheets loaded from data.json");
-}
-// Create data.json if it doesn't exist
-else {
-  fs.writeFileSync("data.json", JSON.stringify({}));
-  console.log("data.json file created");
-}
+const loadTimesheets = async () => {
+  try {
+    const rawData = await fs.readFile(dataFilePath);
+    timesheets = JSON.parse(rawData);
+    console.log("Timesheets loaded from data.json");
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      await fs.writeFile(dataFilePath, JSON.stringify({}));
+      console.log("data.json file created");
+    } else {
+      throw err;
+    }
+  }
+};
+
+loadTimesheets();
 
 // Default timesheet values
 const defaultTimesheet = [
@@ -43,25 +54,21 @@ const getPreviousMonday = (date = null) => {
 const currentStartDate = getPreviousMonday().toISOString().split("T")[0];
 
 // Get all timesheets
-app.get("/timesheets", (req, res) => {
-  if (fs.existsSync("data.json")) {
-    const rawData = fs.readFileSync("data.json");
-    timesheets = JSON.parse(rawData);
-    console.log("Timesheets loaded from data.json");
-  }
+app.get("/timesheets", async (req, res) => {
+  await loadTimesheets();
   if (Object.keys(timesheets).length === 0) {
     console.log(
       `No timesheets found. Creating a new timesheet for the current week with ${currentStartDate} as Monday.`
     );
     timesheets[currentStartDate] = defaultTimesheet;
-    fs.writeFileSync("data.json", JSON.stringify(timesheets));
+    await fs.writeFile(dataFilePath, JSON.stringify(timesheets));
   }
   res.json(timesheets);
   console.log("Timesheets sent");
 });
 
 // Get a specific timesheet by starting date of the week
-app.get("/timesheets/:startDate", (req, res) => {
+app.get("/timesheets/:startDate", async (req, res) => {
   let timesheet = timesheets[req.params.startDate];
   if (!timesheet) {
     console.log(
@@ -69,7 +76,7 @@ app.get("/timesheets/:startDate", (req, res) => {
     );
     timesheet = defaultTimesheet;
     timesheets[req.params.startDate] = timesheet;
-    fs.writeFileSync("data.json", JSON.stringify(timesheets));
+    await fs.writeFile(dataFilePath, JSON.stringify(timesheets));
   }
   res.send(timesheet);
   console.log(
@@ -78,7 +85,7 @@ app.get("/timesheets/:startDate", (req, res) => {
 });
 
 // Create a new timesheet
-app.post("/timesheets/:startDate", (req, res) => {
+app.post("/timesheets/:startDate", async (req, res) => {
   const timesheet = timesheets[req.params.startDate];
   if (timesheet) {
     console.log(
@@ -96,7 +103,7 @@ app.post("/timesheets/:startDate", (req, res) => {
     total: req.body.total,
   };
   timesheets[req.params.startDate] = newTimesheet;
-  fs.writeFileSync("data.json", JSON.stringify(timesheets));
+  await fs.writeFile(dataFilePath, JSON.stringify(timesheets));
   res.send(newTimesheet);
   console.log(
     `New timesheet for the week starting with ${req.params.startDate} as Monday created`
@@ -104,7 +111,7 @@ app.post("/timesheets/:startDate", (req, res) => {
 });
 
 // Update a timesheet
-app.put("/timesheets/:startDate", (req, res) => {
+app.put("/timesheets/:startDate", async (req, res) => {
   let timesheet = timesheets[req.params.startDate];
   if (!timesheet) {
     console.log(
@@ -119,7 +126,7 @@ app.put("/timesheets/:startDate", (req, res) => {
       total: req.body.total,
     };
     timesheets[req.params.startDate] = timesheet;
-    fs.writeFileSync("data.json", JSON.stringify(timesheets));
+    await fs.writeFile(dataFilePath, JSON.stringify(timesheets));
     res.send(timesheet);
     console.log(
       `New timesheet for the week starting with ${req.params.startDate} as Monday created`
@@ -134,7 +141,7 @@ app.put("/timesheets/:startDate", (req, res) => {
   timesheet.hours = req.body.hours;
   timesheet.total = req.body.total;
 
-  fs.writeFileSync("data.json", JSON.stringify(timesheets));
+  await fs.writeFile(dataFilePath, JSON.stringify(timesheets));
   res.send(timesheet);
   console.log(
     `Timesheet for the week starting with ${req.params.startDate} as Monday updated`
@@ -142,7 +149,7 @@ app.put("/timesheets/:startDate", (req, res) => {
 });
 
 // Delete a timesheet
-app.delete("/timesheets/:startDate", (req, res) => {
+app.delete("/timesheets/:startDate", async (req, res) => {
   const timesheet = timesheets[req.params.startDate];
   if (!timesheet) {
     console.log(
@@ -156,7 +163,7 @@ app.delete("/timesheets/:startDate", (req, res) => {
   }
 
   delete timesheets[req.params.startDate];
-  fs.writeFileSync("data.json", JSON.stringify(timesheets));
+  await fs.writeFile(dataFilePath, JSON.stringify(timesheets));
   res.send(
     `Deleted the timesheet for the week starting with ${req.params.startDate} as Monday successfully`
   );
