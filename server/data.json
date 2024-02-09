@@ -1,1 +1,20 @@
-{}
+{
+  "2024-02-05": [
+    {
+      "projectType": "",
+      "projectName": "",
+      "task": "",
+      "comment": "",
+      "hours": {
+        "mon": 0,
+        "tue": 0,
+        "wed": 0,
+        "thu": 0,
+        "fri": 0,
+        "sat": 0,
+        "sun": 0
+      },
+      "total": 0
+    }
+  ]
+}

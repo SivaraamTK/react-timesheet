@@ -12,38 +12,21 @@ import "primereact/resources/themes/lara-light-purple/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 
+import { getPreviousMonday, formatDate, shortDate } from "./utility/dateFuncts";
+import {
+  projectTypeOptions,
+  projectNameOptions,
+  taskOptions,
+} from "./placeholders/dropdownOptionSample";
+import { cellStyle } from "./utility/dynamicStyles";
 import SideNavBar from "./SideNavBar";
 import "./App.css";
 
-const getPreviousMonday = (date = null) => {
-  const prevMonday = (date && new Date(date.valueOf())) || new Date();
-  prevMonday.setDate(prevMonday.getDate() - ((prevMonday.getDay() + 6) % 7));
-  return prevMonday;
-};
-
-function formatDate(date) {
-  return date.toISOString().split("T")[0];
-}
-
-const projectTypeOptions = [
-  { label: "BAU Activity", value: "BAU" },
-  { label: "Sales Activity", value: "Sales" },
-];
-const projectNameOptions = [
-  { label: "Training", value: "BAU_001" },
-  { label: "People", value: "BAU_002" },
-  { label: "Pre-Sales", value: "Sales_001" },
-  { label: "Post-Sales", value: "Sales_002" },
-];
-const taskOptions = [
-  { label: "Build & Run Training", value: "Build & Run" },
-  { label: "Complete Training", value: "Complete Training" },
-  { label: "People Management", value: "People Mgmt." },
-  { label: "Pre-Sales Activity", value: "Pre-Sales Act" },
-];
-
 function App() {
+  // Reference to the DataTable component
   const dt = useRef(null);
+
+  // State variable for timesheet data
   const [rows, setRows] = useState([
     {
       projectType: "",
@@ -55,6 +38,7 @@ function App() {
     },
   ]);
 
+  // State variable for total hours
   const [total, setTotal] = useState({
     mon: 0,
     tue: 0,
@@ -66,6 +50,7 @@ function App() {
     overall: 0,
   });
 
+  // State variable for the week's dates, current week by default
   const [week, setWeek] = useState({
     mon: getPreviousMonday(),
     tue: new Date(
@@ -88,9 +73,10 @@ function App() {
     ),
   });
 
+  // State variable for the week's start date
   const [weekStart, setWeekStart] = useState(getPreviousMonday());
 
-  // Load data from local storage whenever the component mounts
+  // Load data from local storage or backend whenever the component mounts
   useEffect(() => {
     const fetchTimesheetData = async (date) => {
       try {
@@ -106,7 +92,6 @@ function App() {
         console.error("Failed to fetch timesheet data:", error);
       }
     };
-
     const savedData = localStorage.getItem(
       `timesheetData-${formatDate(weekStart)}`
     );
@@ -124,6 +109,7 @@ function App() {
     }
   }, [weekStart]);
 
+  // Update the total hours whenever the timesheet data changes
   useEffect(() => {
     if (!Array.isArray(rows)) {
       console.error("rows is not an array");
@@ -147,6 +133,7 @@ function App() {
     console.log("Updated totals");
   }, [rows]);
 
+  // Save the timesheet data to local storage whenever the timesheet data changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       localStorage.setItem(
@@ -158,19 +145,19 @@ function App() {
     return () => clearTimeout(timeoutId);
   }, [rows, weekStart]);
 
+  // Update the week's dates whenever the week's start date changes
   useEffect(() => {
     const weekDays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
     const newWeek = weekDays.reduce((acc, day, index) => {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + index);
-      acc[day] = `${date.getDate()}-${
-        date.getMonth() + 1
-      }-${date.getFullYear()}`;
+      acc[day] = new Date(date);
       return acc;
     }, {});
     setWeek(newWeek);
   }, [weekStart]);
 
+  // Update the edited cell's value in the state
   const onCellEditComplete = (e) => {
     let { rowData, newValue, field, originalEvent: event } = e;
     if (newValue.trim().length > 0) {
@@ -183,6 +170,7 @@ function App() {
     }
   };
 
+  // Custom editor for text input
   const textEditor = (options) => {
     return (
       <InputText
@@ -193,14 +181,15 @@ function App() {
     );
   };
 
+  // Custom editor for number input
   const numberEditor = (day) => {
     return (props) => (
       <InputNumber
         {...props}
         mode="decimal"
         min={0}
-        className={props.value > 8 ? "p-invalid" : ""}
-        style={props.value > 8 ? { color: "red" } : {}}
+        className={props.value >= 8 ? "p-invalid" : ""}
+        style={props.value >= 8 ? { color: "red" } : {}}
         onChange={(e) => {
           const newRows = [...rows];
           newRows[props.rowIndex].hours = newRows[props.rowIndex].hours || {};
@@ -223,6 +212,7 @@ function App() {
     );
   };
 
+  // Custom editor for dropdown input
   const DropdownEditor = ({ options, fieldOptions, rows, setRows }) => {
     const [dropdownValue, setDropdownValue] = useState(
       options.rowData[options.field]
@@ -250,16 +240,7 @@ function App() {
     );
   };
 
-  const dynamicRowClassName = (rowData) => {
-    if (rowData.hours) {
-      return {
-        "red-row": Object.values(rowData.hours).some((hour) => hour >= 8),
-      };
-    } else {
-      return {};
-    }
-  };
-
+  // Add a new row to the timesheet
   const addRow = () => {
     setRows([
       ...rows,
@@ -274,6 +255,7 @@ function App() {
     ]);
   };
 
+  // Remove a row from the timesheet
   const removeRow = (index) => {
     if (index !== 0) {
       const newRows = rows.filter((row, i) => i !== index);
@@ -281,18 +263,21 @@ function App() {
     }
   };
 
+  // Move to the previous week
   const prevWeek = () => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() - 7);
     setWeekStart(date);
   };
 
+  // Move to the next week
   const nextWeek = () => {
     const date = new Date(weekStart);
     date.setDate(weekStart.getDate() + 7);
     setWeekStart(date);
   };
 
+  // Save the timesheet data to local storage and the server
   const saveData = () => {
     localStorage.setItem(
       `timesheetData-${formatDate(weekStart)}`,
@@ -301,17 +286,21 @@ function App() {
     saveTimesheetData();
   };
 
+  // Save the timesheet data to the server
   const saveTimesheetData = async () => {
     try {
+      console.log("Saving timesheet data in server...");
       await axios.post(
         `http://localhost:8080/timesheets/${formatDate(weekStart)}`,
         rows
       );
+      console.log("Timesheet data saved successfully!");
     } catch (error) {
       console.error("Failed to save timesheet data:", error);
     }
   };
 
+  // Export the timesheet data to a CSV file
   const exportCSV = () => {
     dt.current.exportCSV();
   };
@@ -336,13 +325,13 @@ function App() {
         <Column header="Sun" />
       </Row>
       <Row>
-        <Column header={`${week.mon}`} />
-        <Column header={`${week.tue}`} />
-        <Column header={`${week.wed}`} />
-        <Column header={`${week.thu}`} />
-        <Column header={`${week.fri}`} />
-        <Column header={`${week.sat}`} />
-        <Column header={`${week.sun}`} />
+        <Column header={shortDate(week.mon)} />
+        <Column header={shortDate(week.tue)} />
+        <Column header={shortDate(week.wed)} />
+        <Column header={shortDate(week.thu)} />
+        <Column header={shortDate(week.fri)} />
+        <Column header={shortDate(week.sat)} />
+        <Column header={shortDate(week.sun)} />
       </Row>
     </ColumnGroup>
   );
@@ -386,7 +375,9 @@ function App() {
                   <span className="p-button-icon p-c pi pi-angle-left"></span>
                   <span className="p-button-label p-c">&nbsp;</span>
                 </button>
-                <div className="date-range">{`${week.mon} to ${week.sun}`}</div>
+                <div className="date-range">{`${formatDate(
+                  week.mon
+                )} to ${formatDate(week.sun)}`}</div>
                 <button
                   type="button"
                   onClick={nextWeek}
@@ -417,7 +408,6 @@ function App() {
                 ref={dt}
                 headerColumnGroup={headerGroup}
                 footerColumnGroup={footerGroup}
-                rowClassName={dynamicRowClassName}
                 editMode="cell"
                 size="small"
                 tableStyle={{
@@ -427,6 +417,9 @@ function App() {
                 <Column
                   field="projectType"
                   key="projectType"
+                  body={(rowData) => (
+                    <div style={cellStyle}>{rowData.projectType}</div>
+                  )}
                   editor={(props) => (
                     <DropdownEditor
                       options={props}
@@ -439,6 +432,9 @@ function App() {
                 <Column
                   field="projectName"
                   key="projectName"
+                  body={(rowData) => (
+                    <div style={cellStyle}>{rowData.projectName}</div>
+                  )}
                   editor={(props) => (
                     <DropdownEditor
                       options={props}
@@ -451,6 +447,9 @@ function App() {
                 <Column
                   field="task"
                   key="task"
+                  body={(rowData) => (
+                    <div style={cellStyle}>{rowData.task}</div>
+                  )}
                   editor={(props) => (
                     <DropdownEditor
                       options={props}
@@ -463,6 +462,9 @@ function App() {
                 <Column
                   field="comment"
                   key="comment"
+                  body={(rowData) => (
+                    <div style={cellStyle}>{rowData.comment}</div>
+                  )}
                   editor={(options) => textEditor(options)}
                   onCellEditComplete={onCellEditComplete}
                 />
@@ -470,36 +472,113 @@ function App() {
                   field="hours.mon"
                   key="hours.mon"
                   editor={numberEditor("mon")}
+                  body={(rowData) => (
+                    <div
+                      style={
+                        rowData.hours.mon >= 8
+                          ? { ...cellStyle, color: "red" }
+                          : cellStyle
+                      }
+                    >
+                      {rowData.hours.mon}
+                    </div>
+                  )}
                 />
                 <Column
                   field="hours.tue"
                   key="hours.tue"
                   editor={numberEditor("tue")}
+                  body={(rowData) => (
+                    <div
+                      style={
+                        rowData.hours.tue >= 8
+                          ? { ...cellStyle, color: "red" }
+                          : cellStyle
+                      }
+                    >
+                      {rowData.hours.tue}
+                    </div>
+                  )}
                 />
                 <Column
                   field="hours.wed"
                   key="hours.wed"
                   editor={numberEditor("wed")}
+                  body={(rowData) => (
+                    <div
+                      style={
+                        rowData.hours.wed >= 8
+                          ? { ...cellStyle, color: "red" }
+                          : cellStyle
+                      }
+                    >
+                      {rowData.hours.wed}
+                    </div>
+                  )}
                 />
                 <Column
                   field="hours.thu"
                   key="hours.thu"
                   editor={numberEditor("thu")}
+                  body={(rowData) => (
+                    <div
+                      style={
+                        rowData.hours.thu >= 8
+                          ? { ...cellStyle, color: "red" }
+                          : cellStyle
+                      }
+                    >
+                      {rowData.hours.thu}
+                    </div>
+                  )}
                 />
                 <Column
                   field="hours.fri"
                   key="hours.fri"
                   editor={numberEditor("fri")}
+                  body={(rowData) => (
+                    <div
+                      style={
+                        rowData.hours.fri >= 8
+                          ? { ...cellStyle, color: "red" }
+                          : cellStyle
+                      }
+                    >
+                      {rowData.hours.fri}
+                    </div>
+                  )}
                 />
                 <Column
                   field="hours.sat"
                   key="hours.sat"
-                  editor={numberEditor("sat")}
+                  editor={numberEditor("")}
+                  body={(rowData) => (
+                    <div
+                      style={
+                        rowData.hours.sat >= 8
+                          ? { ...cellStyle, color: "red" }
+                          : cellStyle
+                      }
+                    >
+                      {rowData.hours.sat}
+                    </div>
+                  )}
                 />
                 <Column
                   field="hours.sun"
                   key="hours.sun"
                   editor={numberEditor("sun")}
+                  body={(rowData) => (
+                    <div
+                      style={
+                        rowData.hours.sun >= 8
+                          ? { ...cellStyle, color: "red" }
+                          : cellStyle
+                      }
+                    >
+                      {rowData.hours.sun}
+                    </div>
+                  )}
                 />
                 <Column
                   field="total"

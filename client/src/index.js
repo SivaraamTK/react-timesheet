@@ -7,7 +7,7 @@ import { PrimeReactProvider } from "primereact/api";
 
 const value = {
   inputStyle: "outlined",
-  ripple: true,
+  ripple: false,
   locale: "en",
 };
 

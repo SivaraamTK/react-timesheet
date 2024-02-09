@@ -23,10 +23,10 @@ const SideNavBar = () => {
     <div
       className="p-panelmenu-wrapper"
       style={{
-        paddingTop: "10px",
+        paddingTop: "20px",
         background: "linear-gradient(to bottom, #19105b, #fe6095 )",
         color: "#ffffff",
-        width: "250px",
+        width: "150px",
         height: "100vh",
       }}
     >
@@ -34,7 +34,7 @@ const SideNavBar = () => {
         className="p-panelmenu-header"
         style={{
           display: "flex",
-          paddingLeft: "50px",
+          paddingLeft: "30px",
           justifyContent: "left",
         }}
       >
@@ -50,6 +50,7 @@ const SideNavBar = () => {
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: "transparent",
+            padding: "0px",
           }}
         >
           {items.map((item, index) => (
@@ -60,6 +61,7 @@ const SideNavBar = () => {
                 color: "white",
                 backgroundColor: "transparent",
                 padding: "10px",
+                fontSize: "small",
               }}
             >
               <a
@@ -70,7 +72,7 @@ const SideNavBar = () => {
                   textDecoration: "none",
                 }}
               >
-                <i className={item.icon}></i>
+                <i className={item.icon}></i> &nbsp;
                 <span>{item.label}</span>
               </a>
             </li>
@@ -79,7 +81,7 @@ const SideNavBar = () => {
       </div>
       <hr />
       <div className="p-panelmenu-footer" style={{ padding: "5px" }}>
-        <span style={{ float: "left", paddingLeft: "30px" }}>John Doe </span>
+        <span style={{ float: "left", paddingLeft: "10px" }}>John Doe </span>
         <i
           className="pi pi-sign-out"
           style={{
