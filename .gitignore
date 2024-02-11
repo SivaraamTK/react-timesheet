@@ -21,4 +21,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
 /server/data.json
+*data.json*
+/server/logs
+/server/.env
+*.env
