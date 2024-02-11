@@ -83,10 +83,23 @@ function App() {
         const response = await axios.get(
           `http://localhost:8080/timesheets/${date}`
         );
-        setRows(response.data);
+        let data = response.data;
+        if (!Array.isArray(data)) {
+          data = [
+            {
+              projectType: "",
+              projectName: "",
+              task: "",
+              comment: "",
+              hours: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
+              total: 0,
+            },
+          ];
+        }
+        setRows(data);
         localStorage.setItem(
           `timesheetData-${formatDate(weekStart)}`,
-          JSON.stringify(response.data)
+          JSON.stringify(data)
         );
       } catch (error) {
         console.error("Failed to fetch timesheet data:", error);
@@ -98,7 +111,16 @@ function App() {
     if (savedData) {
       let loadedRows = JSON.parse(savedData);
       if (!Array.isArray(loadedRows)) {
-        loadedRows = [loadedRows];
+        loadedRows = [
+          {
+            projectType: "",
+            projectName: "",
+            task: "",
+            comment: "",
+            hours: { mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0, sun: 0 },
+            total: 0,
+          },
+        ];
       }
       setRows(loadedRows);
       console.log("Loaded data from local storage");
@@ -409,7 +431,6 @@ function App() {
                 headerColumnGroup={headerGroup}
                 footerColumnGroup={footerGroup}
                 editMode="cell"
-                size="small"
                 tableStyle={{
                   minWidth: "50rem",
                 }}

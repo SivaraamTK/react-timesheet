@@ -1,6 +1,60 @@
 {
   "2024-02-05": [
     {
+      "projectType": "BAU",
+      "projectName": "BAU_001",
+      "task": "Build & Run",
+      "comment": "Hello",
+      "hours": {
+        "mon": 1,
+        "tue": 2,
+        "wed": 3,
+        "thu": 4,
+        "fri": 5,
+        "sat": 0,
+        "sun": 8,
+        "": 6
+      },
+      "total": 29
+    },
+    {
+      "projectType": "Sales",
+      "projectName": "Sales_001",
+      "task": "Pre-Sales Act",
+      "comment": "World",
+      "hours": {
+        "mon": 4,
+        "tue": 3,
+        "wed": 2,
+        "thu": 1,
+        "fri": 2,
+        "sat": 0,
+        "sun": 0,
+        "": 3
+      },
+      "total": 15
+    }
+  ],
+  "2024-01-29": [
+    {
+      "projectType": "",
+      "projectName": "",
+      "task": "",
+      "comment": "",
+      "hours": {
+        "mon": 0,
+        "tue": 0,
+        "wed": 0,
+        "thu": 0,
+        "fri": 0,
+        "sat": 0,
+        "sun": 0
+      },
+      "total": 0
+    }
+  ],
+  "2024-02-12": [
+    {
       "projectType": "",
       "projectName": "",
       "task": "",
