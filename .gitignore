@@ -26,4 +26,4 @@ yarn-error.log*
 *data.json*
 /server/logs
 /server/.env
-*.env
+.env

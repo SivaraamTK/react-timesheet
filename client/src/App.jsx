@@ -431,6 +431,7 @@ function App() {
                 headerColumnGroup={headerGroup}
                 footerColumnGroup={footerGroup}
                 editMode="cell"
+                size="small"
                 tableStyle={{
                   minWidth: "50rem",
                 }}
@@ -572,7 +573,7 @@ function App() {
                 <Column
                   field="hours.sat"
                   key="hours.sat"
-                  editor={numberEditor("")}
+                  editor={numberEditor("sat")}
                   body={(rowData) => (
                     <div
                       style={

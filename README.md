@@ -39,7 +39,7 @@ npm run client
 ```
 
 *Note:*
-Since we are using Node.js workspaces, we can separately install dependencies or run scripts for the server and client apps by using the `server` and `client` workspaces with the flag `--workspace=` or `--w=`.
+Since we are using Node.js workspaces, we can separately install dependencies or run scripts for the server and client apps by using the `server` and `client` workspaces with the flag `--workspace=` or `-w=`.
 Eg:
 ```bash
 npm install express --workspace=./server

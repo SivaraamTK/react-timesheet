@@ -3,10 +3,19 @@ const { Sequelize } = require("sequelize");
 const fs = require("fs");
 const path = require("path");
 
-const logStream = fs.createWriteStream(
-  path.join(__dirname, "../../logs/database.log"),
-  { flags: "a" }
-);
+const logDir = path.join(__dirname, "../../logs");
+const logFile = path.join(logDir, "database.log");
+
+// Check if the logs directory exists, if not create it
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir);
+}
+// Check if the database.log file exists, if not create it
+if (!fs.existsSync(logFile)) {
+  fs.writeFileSync(logFile, "");
+}
+
+const logStream = fs.createWriteStream(logFile, { flags: "a" });
 
 // Connector to PostgreSQL database
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
